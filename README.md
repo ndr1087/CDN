@@ -1,1 +1,1 @@
-# CDN
+This repository hosts the implementation of a Content Delivery Network (CDN) server written in Go. It is designed to route requests efficiently and initialize necessary middleware for optimized content delivery. The server aims to provide high performance and reliable content distribution to ensure quick load times and a seamless user experience.
