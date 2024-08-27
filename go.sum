@@ -1,0 +1,4 @@
+github.com/gorilla/mux v1.8.0 h1:LfOfwAfo6BJHDIkp/Fp6CRsXDWUd6DLO5TEl/Q5XCoQ=
+github.com/gorilla/mux v1.8.0/go.mod h1:2c5IRbWZV9/pS4zRWmE4U5Uz+dGskWQug4+J0jOwq9A=
+github.com/rs/zerolog v1.23.0 h1:+5EVb2JhXsEj8DB8xL2t/YHDejlbUsn7P/Pw4pI0tGY=
+github.com/rs/zerolog v1.23.0/go.mod h1:+rFCgYrHz9hJwH5F6Dyd1fgiB+vM5/JWbwAq54r8N9E=
