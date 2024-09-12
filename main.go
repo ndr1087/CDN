@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func initEnv() {
+func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found. Assuming environment variables are set.")
 	}
@@ -18,24 +18,22 @@ func initEnv() {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request received: %s %s", r.Method, r.RequestURI)
+		log.Printf("Request received: %s %s", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
 
 func handleMain(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "CDN Service is up and running!")
+	fmt.Fprintln(w, "CDN Service is up and running!")
 }
 
 func handleCDNContent(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Serving CDN content...")
+	vars := mux.Vars(r)
+	fmt.Fprintf(w, "Serving CDN content for: %s", vars["content"])
 }
 
 func main() {
-	initEnv()
-
 	router := mux.NewRouter()
-
 	router.Use(loggingMiddleware)
 
 	router.HandleFunc("/", handleMain).Methods("GET")
