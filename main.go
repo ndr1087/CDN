@@ -11,8 +11,10 @@ import (
 )
 
 func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found. Assuming environment variables are set.")
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		log.Printf("Error loading .env file: %v", err)
+	} else {
+		log.Println("Environment variables have been successfully loaded or are already set.")
 	}
 }
 
@@ -29,7 +31,12 @@ func handleMain(w http.ResponseWriter, r *http.Request) {
 
 func handleCDNContent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	fmt.Fprintf(w, "Serving CDN content for: %s", vars["content"])
+	content, ok := vars["content"]
+	if !ok {
+		http.Error(w, "Content identifier missing", http.StatusBadRequest)
+		return
+	}
+	fmt.Fprintf(w, "Serving CDN content for: %s", content)
 }
 
 func main() {
@@ -41,11 +48,13 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
+		log.Println("PORT environment variable not set, defaulting to 8080")
 		port = "8080"
 	}
 
 	log.Printf("Starting server on port %s", port)
+
 	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatal("Error starting server: ", err)
+		log.Fatalf("Error starting server: %v", err)
 	}
 }
