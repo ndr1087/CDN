@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-// Cache structure to simulate caching mechanism for CDN
 type Cache map[string]string
 
 var cache Cache
@@ -16,17 +15,19 @@ func init() {
 	cache = make(Cache)
 }
 
-// Handler for content delivery
 func getContentHandler(w http.ResponseWriter, r *http.Request) {
 	contentID := r.URL.Query().Get("id")
 	if content, ok := cache[contentID]; ok {
-		w.Write([]byte(content))
+		if _, err := w.Write([]byte(content)); err != nil {
+			log.Printf("Error sending response for getContent: %v\n", err)
+			http.Error(w, "Error writing content response", http.StatusInternalServerError)
+			return
+		}
 	} else {
 		http.Error(w, "Content Not Found", http.StatusNotFound)
 	}
 }
 
-// Handler for adding content to the cache
 func addContentHandler(w http.ResponseWriter, r *http.Request) {
 	contentID := r.URL.Query().Get("id")
 	contentValue := r.URL.Query().Get("value")
@@ -34,14 +35,12 @@ func addContentHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// Handler for removing content from the cache
 func removeContentHandler(w http.ResponseWriter, r *http.Request) {
 	contentID := r.URL.Query().Get("id")
 	delete(cache, contentID)
 	w.WriteHeader(http.StatusOK)
 }
 
-// Handler for checking the CDN status
 func statusCheckHandler(w http.ResponseWriter, r *http.Request) {
 	status := struct {
 		Status string `json:"status"`
@@ -50,10 +49,14 @@ func statusCheckHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := json.Marshal(status)
 	if err != nil {
+		log.Printf("Error marshalling status response: %v\n", err)
 		http.Error(w, "Error generating status", http.StatusInternalServerError)
 		return
 	}
-	w.Write(resp)
+	if _, err := w.Write(resp); err != nil {
+		log.Printf("Error sending status response: %v\n", err)
+		http.Error(w, "Error writing status response", http.StatusInternalServerError)
+	}
 }
 
 func main() {
@@ -64,7 +67,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // Default port if not specified
+		port = "8080" 
 	}
 
 	log.Println("CDN Server starting on port:", port)
