@@ -7,67 +7,67 @@ import (
 	"os"
 )
 
-type Cache map[string]string
+type ContentCache map[string]string
 
-var cache Cache
+var contentCache ContentCache
 
 func init() {
-	cache = make(Cache)
+	contentCache = make(ContentCache)
 }
 
-func getContentHandler(w http.ResponseWriter, r *http.Request) {
+func handleGetContent(w http.ResponseWriter, r *http.Request) {
 	contentID := r.URL.Query().Get("id")
-	if content, ok := cache[contentID]; ok {
+	if content, exists := contentCache[contentID]; exists {
 		if _, err := w.Write([]byte(content)); err != nil {
-			log.Printf("Error sending response for getContent: %v\n", err)
-			http.Error(w, "Error writing content response", http.StatusInternalServerError)
+			log.Printf("Error sending content for ID %s: %v\n", contentID, err)
+			http.Error(w, "Error serving content", http.StatusInternalServerError)
 			return
 		}
 	} else {
-		http.Error(w, "Content Not Found", http.StatusNotFound)
+		http.Error(w, "Content not found", http.StatusNotFound)
 	}
 }
 
-func addContentHandler(w http.ResponseWriter, r *http.Request) {
+func handleAddContent(w http.ResponseWriter, r *http.Request) {
 	contentID := r.URL.Query().Get("id")
 	contentValue := r.URL.Query().Get("value")
-	cache[contentID] = contentValue
+	contentCache[contentID] = contentValue
 	w.WriteHeader(http.StatusCreated)
 }
 
-func removeContentHandler(w http.ResponseWriter, r *http.Request) {
+func handleRemoveContent(w http.ResponseWriter, r *http.Request) {
 	contentID := r.URL.Query().Get("id")
-	delete(cache, contentID)
+	delete(contentCache, contentID)
 	w.WriteHeader(http.StatusOK)
 }
 
-func statusCheckHandler(w http.ResponseWriter, r *http.Request) {
+func handleStatusCheck(w http.ResponseWriter, r *http.Request) {
 	status := struct {
 		Status string `json:"status"`
 	}{
-		Status: "CDN is up and running",
+		Status: "CDN is operational",
 	}
-	resp, err := json.Marshal(status)
+	response, err := json.Marshal(status)
 	if err != nil {
-		log.Printf("Error marshalling status response: %v\n", err)
+		log.Printf("Error marshalling status check response: %v\n", err)
 		http.Error(w, "Error generating status", http.StatusInternalServerError)
 		return
 	}
-	if _, err := w.Write(resp); err != nil {
-		log.Printf("Error sending status response: %v\n", err)
+	if _, err := w.Write(response); err != nil {
+		log.Printf("Error sending status check response: %v\n", err)
 		http.Error(w, "Error writing status response", http.StatusInternalServerError)
 	}
 }
 
 func main() {
-	http.HandleFunc("/getContent", getContentHandler)
-	http.HandleFunc("/addContent", addContentHandler)
-	http.HandleFunc("/removeContent", removeContentHandler)
-	http.HandleFunc("/status", statusCheckHandler)
+	http.HandleFunc("/getContent", handleGetContent)
+	http.HandleFunc("/addContent", handleAddContent)
+	http.HandleFunc("/removeContent", handleRemoveContent)
+	http.HandleFunc("/status", handleStatusCheck)
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" 
+		port = "8080"
 	}
 
 	log.Println("CDN Server starting on port:", port)
