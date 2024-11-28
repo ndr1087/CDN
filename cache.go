@@ -10,11 +10,12 @@ load_dotenv()
 CACHE_DIR = os.getenv("CACHE_DIR", ".cache")
 CACHE_EXPIRE_SECONDS = int(os.getenv("CACHE_EXPIRE_SECONDS", 3600))
 
-os.makedirs(CACHE_DIR, exist_ok=True)
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR, exist_ok=True)
 
 def cache_key_function(args, kwargs):
-    key = f"{args}_{kwargs}".encode()
-    return hashlib.md5(key).hexdigest()
+    key = "_".join(map(str, args)) + "_" + "_".join([f"{k}={v}" for k, v in kwargs.items()])
+    return hashlib.md5(key.encode()).hexdigest()
 
 def is_cache_expired(file_path, expiration_seconds):
     current_time = time.time()
@@ -27,12 +28,20 @@ def cache(expiration_seconds=CACHE_EXPIRE_SECONDS):
         def wrapper_cache(*args, **kwargs):
             cache_key = cache_key_function(args, kwargs)
             cache_file = os.path.join(CACHE_DIR, f"{cache_key}.cache")
-            if os.path.exists(cache_file) and not is_cache_expired(cache_file, expiration_seconds):
-                with open(cache_file, "rb") as cf:
-                    return pickle.load(cf)
+            try:
+                if not is_cache_expired(cache_file, expiration_seconds):
+                    with open(cache_file, "rb") as cf:
+                        return pickle.load(cf)
+            except FileNotFoundError:
+                pass
+            
             result = func(*args, **kwargs)
-            with open(cache_file, "wb") as cf:
-                pickle.dump(result, cf)
+            try:
+                with open(cache_file, "wb") as cf:
+                    pickle.dump(result, cf, protocol=pickle.HIGHEST_PROTOCOL)
+            except:
+                pass
+            
             return result
         return wrapper_cache
     return decorator_cache
